@@ -1,30 +1,46 @@
 //Covid device code
 
-#include "DHT.h"                              // DHT Sensor
+#define BLYNK_PRINT Serial
+
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
+#include <Wire.h>
+#include <Adafruit_MLX90614.h>
 
-char auth[] = "kFTr4fo1msEHuA59x6igdfMcN75Hm75d";
-char ssid[] = "GuillemMaza";
-char pass[] = "Guillem2000";
+char auth[] = "tbZIhFWo3vJvHYH9O96tM7k3MW_dZea6";
+char ssid[] = "super3";
+char pass[] = "Sahyunone7";
 
-DHT dhtA(5, DHT22);                           // DHT instance named dhtA, D1 and sensor type
+Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+const int sensorInfraroig = 13;
+const int analog_ip = A0;
+int capacity = 0;
 
 void setup() {
-  Blynk.begin(auth, ssid, pass);              // Connecting to blynk
-  dhtA.begin();                               // Starting the DHT-22
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass);
+  mlx.begin();
+  pinMode(sensorInfraroig , INPUT);
 }
 
 void loop() {
   Blynk.run();
-  climateRoutine();                           // Climate routine
-  delay(4700);                                // 4.7 sec between routines
-}
-
-void climateRoutine() {
-    byte h1 = dhtA.readHumidity();            // f1 and h1 are celsius and humidity readings
-    // byte t1 = dhtA.readTemperature(true);  // for temperature in farenheits
-    byte t1 = dhtA.readTemperature();         // from DHT/A
-    Blynk.virtualWrite(V0, t1);               //  Set Virtual Pin 0 frequency to PUSH in Blynk app
-    Blynk.virtualWrite(V1, h1);               //  Set Virtual Pin 1 frequency to PUSH in Blynk app
+  int detectTemp = 0;
+  int valor = 0;
+  detectTemp = digitalRead(sensorInfraroig);
+  valor = analogRead(analog_ip);
+  if (detectTemp == LOW) {
+      byte tp = mlx.readObjectTempC();
+      Blynk.virtualWrite(V2, tp);
+      digitalWrite(2,LOW);
+      delay(1000);
+      digitalWrite(2,HIGH);
+      capacity = capacity+1;
+      delay(3000);
+      Blynk.virtualWrite(V2, 0);}
+  if (valor < 400) {
+      capacity=capacity-1;
+      delay(1000);}
+  Blynk.virtualWrite(V7,capacity);
+  delay(500);
 }
