@@ -1,41 +1,56 @@
-//Humidifier code
+//Covid device code
 
-//Llibreries necessàries
-#include "DHT.h" //Llibreria per el sensor de temperatura i humitat
-#include <ESP8266WiFi.h>  //Llibreria per utilitzar el Wifi de la ESP
-#include <BlynkSimpleEsp8266.h> //Llibreria per poder sincronitzar la ESP amb el Blynk
+#define BLYNK_PRINT Serial
 
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include <Wire.h>
+#include <Adafruit_MLX90614.h>
 
-char auth[] = "kFTr4fo1msEHuA59x6igdfMcN75Hm75d"; //Token del nostre Blynk
-char ssid[] = "super3"; //Id internet
-char pass[] = "Sahyunone7"; //Password internet
+char auth[] = "tbZIhFWo3vJvHYH9O96tM7k3MW_dZea6";
+char ssid[] = "super3";
+char pass[] = "Sahyunone7";
 
-DHT dhtA(5, DHT22); //Creació de l'objecte per comunicar-te amb el sensor i definició del pin
+Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+const int sensorInfraroig = 13;
+const int analog_ip = A0;
+int capacity = 0;
+const int sensorMax = 16;
+const int sensorMin = 15;
+const int bomba = 14;
 
-//Setup
 void setup() {
-  Blynk.begin(auth, ssid, pass);  //Establim connexió
-  dhtA.begin();  //Inicialitzem
-  pinMode(12, OUTPUT);  //Definició del pint 12 com a sortida, pin on hi ha connectat el relé
-                        //encarregat de obrir o tancar el circut dels generadors d'humitat.
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass);
+  mlx.begin();
+  pinMode(sensorInfraroig , INPUT);
+  pinMode(sensorMax, INPUT_PULLUP);
+  pinMode(sensorMin, INPUT_PULLUP);
+  pinMode(bomba, OUTPUT);
+  digitalWrite(12, HIGH);
+  digitalWrite(bomba, HIGH);
 }
-
-
-//Loop
 void loop() {
-  Blynk.run();  //Inicialitzem el Blynk
-  climateRoutine();   //Cridem funció per llegir temperatura i humitat
-  if (dhtA.readHumidity() < 50){   //Si la lectura de la humitat està per sota del 50%
-    digitalWrite(12,LOW);}  // Alimentem el relè, per tant, s'engeguen els humificadors
-  if (dhtA.readHumidity() > 60){  //Si la humitat està per sobre del 60%
-    digitalWrite(12,HIGH);}       //Deixem de excitar el relé i per tant, obrim el circuit
-                                  //la qual cosa aturarà els generadors de boira
-}
-
-//Funció per llegir Tº i humitat
-void climateRoutine() {
-    byte h1 = dhtA.readHumidity();   //Lectura i emmegatzematge de l'humitat
-    byte t1 = dhtA.readTemperature(); //Lectura i emmagatzematge de la Tº.
-    Blynk.virtualWrite(V0, t1);  //Enviem al Blynk el valor de la Tº per mostrar-lo
-    Blynk.virtualWrite(V1, h1);  //Enviem al Blynk el valor de l'humitat per mostrar-la
+  Blynk.run();
+  int detectTemp = 0;
+  int valor = 0;
+  detectTemp = digitalRead(sensorInfraroig);
+  valor = analogRead(analog_ip);
+  if (digitalRead(sensorMax) == 0){
+      digitalWrite(bomba, HIGH);}
+  if (digitalRead(sensorMin) == 1){
+        digitalWrite(bomba, LOW);}
+  if (detectTemp == LOW) {
+      byte tp = mlx.readObjectTempC();
+      Blynk.virtualWrite(V2, tp);
+      digitalWrite(12,LOW);
+      delay(1000);
+      digitalWrite(12,HIGH);
+      capacity = capacity+1;
+      delay(3000);
+      Blynk.virtualWrite(V2, 0);}
+  if (valor < 400) {
+      capacity=capacity-1;
+      delay(1000);}
+  Blynk.virtualWrite(V7,capacity);
 }
