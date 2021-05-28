@@ -31,12 +31,12 @@ void setup() {
   digitalWrite(LedVerd, LOW);
   digitalWrite(LedVermell, LOW);
   digitalWrite(Brunzidor, LOW);}
-  
+
 void loop() {
   Blynk.run();//Start blyink
   int detectHand = 0;//Defining the variable of detecting temperature initially at 0
   int valor = 0;//Defined the value of the distance sensor initially at 0
-  detectTemp = digitalRead(sensorInfraroig);//Reading and assigning the infrared sensor value
+  detectHand = digitalRead(sensorInfraroig);//Reading and assigning the infrared sensor value
   valor = analogRead(analog_ip);//Reading and assigning the value of the distance detector
   int tp = 0;//Variable of the person's temperature value
   if (detectHand == LOW) {//If detects your hand
@@ -61,4 +61,4 @@ void loop() {
   if (valor < 400) {//If detects a person leaving
       capacity=capacity-1;//The capacity decreases
       delay(2000);}
-  Blynk.virtualWrite(V7,capacity);//The capacity is shown by blynk}
+  Blynk.virtualWrite(V7,capacity);}//The capacity is shown by blynk
